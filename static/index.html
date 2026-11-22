@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Mailer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23FFB100'/%3E%3Cpath d='M7 11l9 7 9-7M7 11v10h18V11z' fill='none' stroke='%231a1300' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0D10; --panel:#14181D; --panel2:#1A1F26; --line:#262B31; --line2:#323944;
+  --text:#E8E6DF; --muted:#8B9099; --amber:#FFB100; --amber-d:#C98A00;
+  --teal:#4FD1C5; --green:#34D399; --red:#F97066; --gray:#6B7280;
+  --r:12px; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,sans-serif;min-height:100vh;
+  background-image:radial-gradient(circle at 12% -5%,rgba(255,177,0,.07),transparent 38%),radial-gradient(circle at 92% 105%,rgba(79,209,197,.05),transparent 40%)}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--amber)}
+h1,h2,h3{margin:0}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:9px;padding:9px 15px;font-weight:600;font-size:13px;
+  border:1px solid var(--line2);background:var(--panel2);cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:hover{border-color:var(--muted);background:#222832}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--amber);border-color:var(--amber);color:#1a1300}
+.btn.primary:hover{background:#ffc233}
+.btn.danger{color:var(--red)} .btn.danger:hover{border-color:var(--red)}
+.btn.sm{padding:6px 10px;font-size:12px;border-radius:7px}
+.btn.ghost{background:transparent}
+.btn svg{width:15px;height:15px;flex:none}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+/* inputs */
+label.f{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:500}
+input[type=text],input[type=password],input[type=number],input[type=time],input[type=email],input[type=search],select,textarea{
+  width:100%;background:#0E1115;border:1px solid var(--line2);border-radius:9px;padding:9px 11px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--amber)}
+textarea{resize:vertical;min-height:90px;line-height:1.5}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+.hint{font-size:12px;color:var(--muted);margin-top:5px}
+.check{display:flex;align-items:center;gap:9px;cursor:pointer}
+.check input{width:17px;height:17px;accent-color:var(--amber)}
+
+/* login */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login-card{width:100%;max-width:440px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:34px 30px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.logo{width:52px;height:52px;border-radius:14px;background:var(--amber);display:inline-flex;align-items:center;justify-content:center;margin-bottom:18px}
+.logo svg{width:28px;height:28px;stroke:#1a1300}
+.login-card h1{font-size:26px;letter-spacing:-.02em}
+.login-card p.sub{color:var(--muted);margin:8px 0 26px}
+.gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;color:#1f1f1f;border:none;border-radius:10px;padding:13px;font-weight:600;font-size:15px;cursor:pointer}
+.gbtn:hover{background:#f1f1f1}
+.gbtn svg{width:20px;height:20px}
+.feat{display:grid;gap:9px;text-align:left;margin-top:26px;color:var(--muted);font-size:13px}
+.feat div{display:flex;gap:10px;align-items:flex-start}
+.feat b{color:var(--amber);font-family:'JetBrains Mono',monospace}
+#login-err{color:var(--red);font-size:13px;margin-top:14px;min-height:18px}
+
+/* header */
+header.top{position:sticky;top:0;z-index:30;background:rgba(11,13,16,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top-in{max-width:1240px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.05em;font-size:14px}
+.brand .logo{width:30px;height:30px;border-radius:8px;margin:0}
+.brand .logo svg{width:17px;height:17px}
+nav.tabs{display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;flex:1}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{background:none;border:none;color:var(--muted);padding:8px 13px;border-radius:8px;cursor:pointer;font-weight:500;white-space:nowrap}
+nav.tabs button:hover{color:var(--text);background:var(--panel)}
+nav.tabs button.on{color:#1a1300;background:var(--amber);font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:8px;font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.04em;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--gray)}
+.dot.run{background:var(--amber);box-shadow:0 0 9px var(--amber);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.dot.run{animation:none}}
+.avatar{width:32px;height:32px;border-radius:50%;border:1px solid var(--line2);cursor:pointer;object-fit:cover;background:var(--panel2)}
+.menu{position:absolute;right:24px;top:56px;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:8px;min-width:230px;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.menu .who{padding:8px 10px 10px;border-bottom:1px solid var(--line);margin-bottom:6px;font-size:12px;color:var(--muted);word-break:break-all}
+.menu .who b{display:block;color:var(--text);font-size:13px}
+@media(max-width:760px){.top-in{flex-wrap:wrap;padding:10px 14px;gap:10px}nav.tabs{order:3;flex-basis:100%}.brand span{display:none}}
+
+main{max-width:1240px;margin:0 auto;padding:24px 24px 90px}
+@media(max-width:760px){main{padding:16px 14px 80px}}
+.view{display:none}.view.on{display:block;animation:fade .25s}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}}
+
+/* panels */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin-bottom:20px;overflow:hidden}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--line)}
+.ph h2{font:600 12px 'JetBrains Mono',monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.pb{padding:18px}
+.page-title{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
+.page-sub{color:var(--muted);margin-bottom:20px}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.stat .l{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.stat .v{font:700 27px 'JetBrains Mono',monospace;margin-top:4px}
+
+/* checklist */
+.setup{border-color:#4a3a10;background:linear-gradient(180deg,#1a1608,var(--panel))}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.step{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);cursor:pointer;font-size:13px}
+.step:hover{border-color:var(--amber)}
+.step i{width:20px;height:20px;border-radius:50%;border:2px solid var(--gray);flex:none;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:11px}
+.step.ok{opacity:.55} .step.ok i{background:var(--green);border-color:var(--green);color:#052e1c}
+.step small{display:block;color:var(--muted);font-size:11.5px}
+
+/* toolbar */
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden}
+.seg button{background:none;border:none;padding:7px 12px;color:var(--muted);cursor:pointer;font-size:12.5px;font-weight:500}
+.seg button.on{background:var(--amber);color:#1a1300;font-weight:600}
+.toolbar input[type=search]{width:220px}
+.toolbar select{width:auto}
+
+/* table */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font:600 11px 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr{cursor:pointer} tbody tr:hover{background:rgba(255,255,255,.025)}
+tbody tr:last-child td{border-bottom:none}
+.co{font-weight:600} .sub{color:var(--muted);font-size:12.5px}
+.badge{display:inline-block;font:600 11px 'JetBrains Mono',monospace;padding:3px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.b-high{color:var(--teal)}.b-medium{color:var(--amber)}.b-low{color:var(--gray)}.b-review{color:var(--red)}.b-sent{color:var(--green)}.b-not{color:var(--muted)}
+.score{display:flex;align-items:center;gap:8px;font:600 12px 'JetBrains Mono',monospace;min-width:92px}
+.bar{flex:1;height:5px;border-radius:9px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;background:var(--teal)}
+.empty{padding:46px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.pager{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid var(--line);color:var(--muted);font:12px 'JetBrains Mono',monospace}
+.rowact{display:flex;gap:6px;justify-content:flex-end}
+.err{color:var(--red);font-size:12px}
+@media(max-width:760px){.hide-m{display:none}}
+
+/* drop zone + thumbs */
+.drop{border:2px dashed var(--line2);border-radius:14px;padding:40px 20px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{border-color:var(--amber);background:rgba(255,177,0,.05);color:var(--text)}
+.drop b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:18px}
+.thumb{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0E1115}
+.thumb img{display:block;width:100%;height:120px;object-fit:cover;object-position:top}
+.thumb span{display:block;padding:6px 9px;font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thumb button{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(0,0,0,.7);color:#fff;cursor:pointer;line-height:1}
+.thumb button:hover{background:var(--red)}
+
+/* console */
+#console{height:420px;overflow-y:auto;padding:14px 18px;background:#0A0C0F;font:12.5px/1.65 'JetBrains Mono',monospace}
+#console .l{white-space:pre-wrap;word-break:break-word}
+#console .t{color:#4b5260;margin-right:9px}
+.l.success{color:var(--green)}.l.fail{color:var(--red)}.l.warn{color:var(--amber)}.l.muted{color:var(--muted)}.l.head{color:var(--teal);font-weight:600;margin-top:6px}
+.runrow{padding:11px 18px;border-bottom:1px solid var(--line);display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;font-size:13px}
+.runrow:last-child{border:none}
+
+/* schedule rows */
+.srow{display:grid;grid-template-columns:1.3fr auto 1.4fr auto auto;gap:10px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}
+.srow:last-child{border:none}
+.srow .last{grid-column:1/-1;font-size:11.5px;color:var(--muted)}
+@media(max-width:760px){.srow{grid-template-columns:1fr 1fr}}
+
+/* settings */
+.keychips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{font:12px 'JetBrains Mono',monospace;padding:4px 10px;border-radius:999px;background:var(--panel2);border:1px solid var(--line2)}
+.stat-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ok{color:var(--green)} .bad{color:var(--red)}
+details{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:14px}
+summary{cursor:pointer;font-weight:600;color:var(--muted)}
+code.uri{display:block;background:#0E1115;border:1px solid var(--line2);padding:8px 10px;border-radius:8px;font:12px 'JetBrains Mono',monospace;word-break:break-all;margin:8px 0}
+.sep{height:1px;background:var(--line);margin:18px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* modal + toast */
+.back{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:60;display:flex;align-items:flex-start;justify-content:center;padding:4vh 14px;overflow:auto}
+.modal{width:100%;max-width:700px;background:var(--panel);border:1px solid var(--line2);border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+.modal .mh{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line)}
+.modal .mb{padding:20px;display:grid;gap:14px}
+.modal .mf{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;padding:14px 20px;border-top:1px solid var(--line)}
+.x{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1}
+#toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:grid;gap:8px;z-index:90;width:min(92vw,440px)}
+.toast{background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--amber);padding:11px 14px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5);animation:fade .2s}
+.toast.good{border-left-color:var(--green)}.toast.bad{border-left-color:var(--red)}
+.spin{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<section id="login" hidden>
+  <div class="login-card">
+    <div class="logo"><svg viewBox="0 0 32 32" fill="none" stroke-width="2.4" stroke-linejoin="round"><path d="M5 9l11 8 11-8M5 9v14h22V9z"/></svg></div>
+    <h1>Job Mailer</h1>
+    <p class="sub">Find recruiter posts, draft tailored emails, and send them from your own Gmail.</p>
+    <button class="gbtn" id="btn-google">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.7-.4-3.9z"/></svg>
+      Continue with Google
+    </button>
+    <div id="login-err"></div>
+    <div class="feat">
+      <div><b>01</b>Bring your own Groq, HarvestAPI and Gmail — keys stay encrypted on the server.</div>
+      <div><b>02</b>Mail goes out from the Gmail account <i>you</i> connect, never from ours.</div>
+      <div><b>03</b>Schedule searches and sends — even while you're offline.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ APP ============ -->
+<div id="app" hidden>
+<header class="top"><div class="top-in">
+  <div class="brand"><div class="logo"><svg viewBox="0 0 32 32" fill="none" stroke-width="2.6" stroke-linejoin="round"><path d="M5 9l11 8 11-8M5 9v14h22V9z"/></svg></div><span>JOB MAILER</span></div>
+  <nav class="tabs" id="tabs">
+    <button data-v="dash" class="on">Dashboard</button>
+    <button data-v="shots">Screenshots</button>
+    <button data-v="console">Console</button>
+    <button data-v="sched">Schedule</button>
+    <button data-v="settings">Settings</button>
+  </nav>
+  <span class="pill" id="runpill"><i class="dot"></i><span>IDLE</span></span>
+  <img class="avatar" id="avatar" alt="Account" referrerpolicy="no-referrer">
+  <div class="menu" id="menu" hidden>
+    <div class="who"><b id="m-name"></b><span id="m-email"></span></div>
+    <button class="btn ghost" style="width:100%" id="btn-out">Sign out</button>
+  </div>
+</div></header>
+
+<main>
+<!-- DASHBOARD -->
+<section class="view on" id="v-dash">
+  <div class="panel setup" id="setup" hidden>
+    <div class="ph"><h2>Finish setup</h2><span class="sub" id="setup-n"></span></div>
+    <div class="pb"><div class="steps" id="steps"></div></div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="actions">
+    <button class="btn primary" id="a-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg><span>Send all unsent</span></button>
+    <button class="btn" id="a-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Find jobs on LinkedIn</button>
+    <button class="btn" id="a-process"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Read screenshots</span></button>
+    <button class="btn ghost" id="a-both">Run everything</button>
+  </div>
+
+  <div class="panel">
+    <div class="ph">
+      <div class="toolbar">
+        <div class="seg" id="f-status"><button data-s="all" class="on">All</button><button data-s="Not Sent">Not sent</button><button data-s="Sent">Sent</button></div>
+        <select id="f-prio"><option value="">Any priority</option><option>High</option><option>Medium</option><option>Low</option></select>
+      </div>
+      <input type="search" id="f-q" placeholder="Search company, role, recruiter…" style="max-width:280px">
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Company / Role</th><th class="hide-m">Recruiter</th><th>Match</th><th class="hide-m">Priority</th><th>Status</th><th></th></tr></thead>
+      <tbody id="jobs"></tbody>
+    </table></div>
+    <div class="pager" id="pager"></div>
+  </div>
+</section>
+
+<!-- SCREENSHOTS -->
+<section class="view" id="v-shots">
+  <div class="page-title">Screenshots</div>
+  <div class="page-sub">Drop recruiter messages / job posts. They’re stored privately, read by the AI, turned into a job + draft email, then deleted.</div>
+  <div class="panel"><div class="pb">
+    <div class="drop" id="drop"><b>Drop images here or click to choose</b>PNG · JPG · WEBP — up to <span id="maxmb">10</span> MB each<input type="file" id="file" accept="image/*" multiple hidden></div>
+    <div class="row" style="margin-top:16px;justify-content:space-between">
+      <span class="sub" id="shot-count"></span>
+      <button class="btn primary" id="shot-run">Read screenshots now</button>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+  </div></div>
+</section>
+
+<!-- CONSOLE -->
+<section class="view" id="v-console">
+  <div class="panel">
+    <div class="ph"><h2>Live console</h2><button class="btn sm ghost" id="c-clear">Clear</button></div>
+    <div id="console"><div class="l muted">Nothing running. Start a run from the dashboard.</div></div>
+  </div>
+  <div class="panel"><div class="ph"><h2>Recent runs</h2></div><div id="runs"><div class="empty">No runs yet.</div></div></div>
+</section>
+
+<!-- SCHEDULE -->
+<section class="view" id="v-sched">
+  <div class="page-title">Schedule</div>
+  <div class="page-sub">Runs happen on the server, so they fire even when this tab is closed. Times use <b id="s-tz"></b> (change in Settings).</div>
+  <div class="panel">
+    <div class="ph"><h2>Daily runs</h2><button class="btn sm primary" id="s-add">+ Add time</button></div>
+    <div id="s-rows"></div>
+  </div>
+  <div class="panel"><div class="pb sub">
+    <b style="color:var(--text)">Find jobs</b> = LinkedIn search only · <b style="color:var(--text)">Read screenshots + send</b> = process uploads, then mail every unsent job ·
+    <b style="color:var(--text)">Everything</b> = search → screenshots → send.
+    A GitHub Actions timer wakes the server every ~20 minutes and starts whatever is due.
+  </div></div>
+</section>
+
+<!-- SETTINGS -->
+<section class="view" id="v-settings">
+  <div class="page-title">Settings</div>
+  <div class="page-sub">Everything here belongs to your account only.</div>
+
+  <div class="panel" id="p-keys">
+    <div class="ph"><h2>API keys</h2></div>
+    <div class="pb">
+      <label class="f">Groq API keys <span class="mono">(console.groq.com/keys)</span></label>
+      <div class="keychips" id="groq-saved"></div>
+      <textarea id="groq-in" rows="3" placeholder="Paste one key per line. Saving REPLACES the keys above. Extra keys are used as backups when one hits its rate limit." autocomplete="off" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary sm" id="groq-save">Save Groq keys</button>
+        <button class="btn sm" id="groq-test">Test saved keys</button>
+        <button class="btn sm danger" id="groq-clear">Remove all</button>
+        <span id="groq-res" class="sub"></span>
+      </div>
+      <div class="sep"></div>
+      <label class="f">HarvestAPI key <span class="mono">(for LinkedIn post search)</span></label>
+      <div class="stat-line"><span id="hv-state"></span></div>
+      <input type="password" id="hv-in" placeholder="Paste a new key to replace the saved one" autocomplete="off">
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary sm" id="hv-save">Save HarvestAPI key</button>
+        <button class="btn sm danger" id="hv-clear">Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-gmail">
+    <div class="ph"><h2>Gmail — where your mail is sent from</h2></div>
+    <div class="pb">
+      <div class="stat-line"><span id="gm-state"></span></div>
+      <div class="row">
+        <button class="btn primary" id="gm-connect">Connect Gmail</button>
+        <button class="btn danger" id="gm-off" hidden>Disconnect</button>
+      </div>
+      <div class="hint">On Google’s screen you can pick <b>any</b> account — it doesn’t have to be the one you signed in with. Mails are sent from that account, appear in its Sent folder, and replies land in its inbox.</div>
+      <details id="gm-adv"><summary>Advanced — use my own Google OAuth client</summary>
+        <p class="hint">Only needed if this server has no shared Gmail client, or you don’t want to use it. Create a <b>Web application</b> OAuth client in Google Cloud Console, enable the Gmail API, add this redirect URI, then paste the downloaded <span class="mono">credentials.json</span> (or upload it).</p>
+        <code class="uri" id="gm-uri"></code>
+        <textarea id="gm-json" rows="4" placeholder='{"web":{"client_id":"…","client_secret":"…"}}' spellcheck="false"></textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="btn sm" id="gm-file">Upload credentials.json</button><input type="file" id="gm-file-in" accept=".json,application/json" hidden>
+          <button class="btn sm primary" id="gm-json-save">Save client</button>
+          <button class="btn sm danger" id="gm-json-clear">Use shared client</button>
+        </div>
+        <p class="hint">Saving a different client disconnects Gmail — connect again afterwards.</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><h2>Your profile — used to write the emails</h2></div>
+    <div class="pb">
+      <div class="grid3">
+        <div><label class="f">Full name</label><input type="text" id="c-name"></div>
+        <div><label class="f">Contact email (in signature)</label><input type="email" id="c-email"></div>
+        <div><label class="f">Phone</label><input type="text" id="c-phone"></div>
+        <div><label class="f">LinkedIn</label><input type="text" id="c-linkedin" placeholder="linkedin.com/in/you"></div>
+        <div><label class="f">GitHub</label><input type="text" id="c-github" placeholder="github.com/you"></div>
+      </div>
+      <div class="sep"></div>
+      <label class="f">Resume (attached to every mail)</label>
+      <div class="stat-line"><span id="rs-state"></span></div>
+      <div class="row">
+        <button class="btn sm" id="rs-pick">Upload PDF / DOCX</button><input type="file" id="rs-in" accept=".pdf,.doc,.docx" hidden>
+        <button class="btn sm danger" id="rs-del" hidden>Remove</button>
+        <button class="btn sm" id="rs-build">Build profile &amp; keywords from resume</button>
+        <button class="btn sm" id="tex-pick">Upload LaTeX (.tex)</button><input type="file" id="tex-in" accept=".tex" hidden>
+      </div>
+      <div style="margin-top:14px"><label class="f">Experience bank — the AI may only use facts from this text</label>
+        <textarea id="profile" rows="9" class="mono" style="font-size:12.5px" spellcheck="false"></textarea></div>
+      <div style="margin-top:14px"><label class="f">LinkedIn search phrases (one per line)</label>
+        <textarea id="kw" rows="6" spellcheck="false" placeholder="AI Engineer Hiring&#10;Hiring Python Developer"></textarea></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><h2>Preferences</h2></div>
+    <div class="pb">
+      <div class="grid3">
+        <div><label class="f">Minimum match score to save (0-100)</label><input type="number" id="p-min" min="0" max="100"></div>
+        <div><label class="f">Max post age (days)</label><input type="number" id="p-age" min="1" max="30"></div>
+        <div><label class="f">Max mails per run</label><input type="number" id="p-cap" min="1" max="200"></div>
+        <div><label class="f">Timezone</label><input type="text" id="p-tz" placeholder="Asia/Kolkata"></div>
+        <div><label class="f">Vision model (screenshots)</label><input type="text" id="p-vm"></div>
+        <div><label class="f">Text model (posts, profile)</label><input type="text" id="p-cm"></div>
+      </div>
+      <label class="check" style="margin-top:14px"><input type="checkbox" id="p-req"> Only save LinkedIn posts that show a real recruiter email and are direct listings</label>
+      <div class="hint">If Groq retires a model, put the new model name here — no redeploy needed.</div>
+    </div>
+  </div>
+  <button class="btn primary" id="save-all">Save profile &amp; preferences</button>
+</section>
+</main>
+</div>
+
+<!-- job modal -->
+<div class="back" id="jm" hidden><div class="modal">
+  <div class="mh"><h3 id="jm-title">Job</h3><button class="x" id="jm-x" aria-label="Close">&times;</button></div>
+  <div class="mb">
+    <div class="grid2"><div><label class="f">Company</label><input type="text" id="j-company"></div><div><label class="f">Job title</label><input type="text" id="j-title"></div></div>
+    <div class="grid2"><div><label class="f">Recruiter name</label><input type="text" id="j-rname"></div><div><label class="f">Recruiter email</label><input type="email" id="j-remail"></div></div>
+    <div><label class="f">Subject</label><input type="text" id="j-subject"></div>
+    <div><label class="f">Email body</label><textarea id="j-body" rows="12"></textarea></div>
+    <div class="sub" id="j-meta"></div>
+  </div>
+  <div class="mf">
+    <button class="btn danger" id="j-del" style="margin-right:auto">Delete</button>
+    <button class="btn" id="j-mark">Mark as sent</button>
+    <button class="btn" id="j-save">Save</button>
+    <button class="btn primary" id="j-send">Save &amp; send</button>
+  </div>
+</div></div>
+
+<div id="toasts"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="/config.js"></script>
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ME = null, JOBS = [], SHOTS = [], filt = {s:'all', p:'', q:'', page:1}, view = 'dash';
+let lastSeq = 0, RUNNING = false, pollT = null, curJob = null;
+const PAGE = 25;
+
+/* ---------- toast / busy ---------- */
+function toast(msg, kind=''){ const d=document.createElement('div'); d.className='toast '+kind; d.textContent=msg; $('#toasts').append(d); setTimeout(()=>d.remove(), kind==='bad'?7000:3800); }
+async function busy(btn, fn){ if(btn.disabled) return; const h=btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="spin"></span>'; try{ return await fn(); } finally{ btn.disabled=false; btn.innerHTML=h; } }
+
+/* ---------- firebase ---------- */
+let auth = null;
+if (!window.FIREBASE_CONFIG || !window.FIREBASE_CONFIG.apiKey) {
+  $('#login').hidden = false; $('#login-err').textContent = 'Server is missing FIREBASE_WEB_CONFIG_JSON — see README step 3.';
+} else {
+  firebase.initializeApp(window.FIREBASE_CONFIG); auth = firebase.auth();
+  auth.onAuthStateChanged(async u => { if (u) await boot(u); else { ME=null; stopPoll(); $('#app').hidden=true; $('#login').hidden=false; } });
+}
+$('#btn-google').onclick = async () => {
+  $('#login-err').textContent = '';
+  const p = new firebase.auth.GoogleAuthProvider(); p.setCustomParameters({prompt:'select_account'});
+  try { await auth.signInWithPopup(p); }
+  catch(e){ if (['auth/popup-blocked','auth/operation-not-supported-in-this-environment'].includes(e.code)) return auth.signInWithRedirect(p);
+            if (e.code!=='auth/popup-closed-by-user' && e.code!=='auth/cancelled-popup-request') $('#login-err').textContent = e.message; }
+};
+$('#btn-out').onclick = () => auth.signOut();
+
+async function api(path, opt={}) {
+  const u = auth.currentUser; if(!u) throw new Error('Not signed in');
+  const h = {'Authorization':'Bearer '+await u.getIdToken(), ...(opt.headers||{})};
+  let body = opt.body;
+  if (body && !(body instanceof FormData) && typeof body !== 'string') { body = JSON.stringify(body); h['Content-Type']='application/json'; }
+  const r = await fetch(path, {...opt, headers:h, body});
+  if (r.status === 401 && !(await r.clone().json().catch(()=>({}))).detail?.needs_gmail) { auth.signOut(); throw new Error('Session expired'); }
+  const data = await r.json().catch(()=>({}));
+  if (!r.ok) { const d = data.detail; const e = new Error(typeof d==='string' ? d : (d?.message || JSON.stringify(d) || r.statusText)); e.status=r.status; e.detail=d; throw e; }
+  return data;
+}
+
+async function boot(user){
+  try { ME = await api('/api/me'); }
+  catch(e){ $('#login').hidden=false; $('#app').hidden=true; $('#login-err').textContent = e.message; if(auth) auth.signOut(); return; }
+  $('#login').hidden = true; $('#app').hidden = false;
+  const av=$('#avatar'); av.onerror=()=>{av.style.visibility='hidden'}; av.style.visibility='visible'; if(user.photoURL) av.src=user.photoURL; else av.style.visibility='hidden'; $('#m-name').textContent = ME.name||''; $('#m-email').textContent = ME.email||'';
+  fillSettings(); renderSetup();
+  const q = new URLSearchParams(location.search);
+  if (q.get('gmail')) { show('settings'); q.get('gmail')==='connected' ? toast('Gmail connected 🎉','good') : toast('Gmail connection failed: '+(q.get('msg')||'unknown'),'bad'); history.replaceState({},'','/'); }
+  await Promise.all([loadJobs(), loadShots()]); loadRuns(); loadSched(); startPoll();
+}
+
+/* ---------- navigation ---------- */
+function show(v){ view=v; $$('.view').forEach(x=>x.classList.toggle('on', x.id==='v-'+v)); $$('#tabs button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+  if(v==='console') loadRuns(); if(v==='shots') loadShots(); if(v==='sched') loadSched(); window.scrollTo(0,0); }
+$('#tabs').onclick = e => { const b=e.target.closest('button'); if(b) show(b.dataset.v); };
+$('#avatar').onclick = e => { e.stopPropagation(); $('#menu').hidden = !$('#menu').hidden; };
+document.addEventListener('click', e => { if(!e.target.closest('#menu')) $('#menu').hidden = true; });
+
+/* ---------- setup checklist ---------- */
+function renderSetup(){
+  const k=ME.keys, g=ME.gmail;
+  const items=[
+    {ok:k.groq.length>0, t:'Add a Groq API key', s:'Reads screenshots & writes emails', go:'settings'},
+    {ok:g.connected, t:'Connect Gmail', s: g.connected?g.email:'Mails are sent from your account', go:'settings'},
+    {ok:!!ME.resume, t:'Upload your resume', s:'Attached to every mail', go:'settings'},
+    {ok:ME.profile_text.trim().length>100, t:'Build your experience profile', s:'So emails sound like you', go:'settings'},
+    {ok:!!k.harvest, t:'Add HarvestAPI key (optional)', s:'Only needed for LinkedIn search', go:'settings'},
+  ];
+  const left = items.filter(i=>!i.ok).length;
+  $('#setup').hidden = left===0;
+  $('#setup-n').textContent = `${items.length-left}/${items.length} done`;
+  $('#steps').innerHTML = items.map((i,n)=>`<div class="step ${i.ok?'ok':''}" data-go="${i.go}"><i>${i.ok?'✓':n+1}</i><div>${esc(i.t)}<small>${esc(i.s)}</small></div></div>`).join('');
+}
+$('#steps').onclick = e => { const s=e.target.closest('.step'); if(s) show(s.dataset.go); };
+
+/* ---------- jobs ---------- */
+async function loadJobs(){ try{ JOBS = await api('/api/jobs'); }catch(e){ toast(e.message,'bad'); } renderJobs(); }
+function renderJobs(){
+  const unsent = JOBS.filter(j=>j.email_status!=='Sent' && j.recruiter_email).length;
+  const sent = JOBS.filter(j=>j.email_status==='Sent').length;
+  const hi = JOBS.filter(j=>j.priority==='High').length;
+  const avg = JOBS.length ? Math.round(JOBS.reduce((a,j)=>a+(+j.job_match_score||0),0)/JOBS.length) : 0;
+  $('#stats').innerHTML = [['Total jobs',JOBS.length],['Ready to send',unsent],['Sent',sent],['High priority',hi],['Avg match',avg+'%']]
+    .map(([l,v])=>`<div class="stat"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+  $('#a-send span').textContent = unsent ? `Send all unsent (${unsent})` : 'Send all unsent';
+  $('#a-send').dataset.n = unsent;
+
+  const q = filt.q.toLowerCase();
+  let rows = JOBS.filter(j => (filt.s==='all' || (filt.s==='Sent') === (j.email_status==='Sent')) &&
+    (!filt.p || j.priority===filt.p) &&
+    (!q || [j.company,j.job_title,j.recruiter_name,j.recruiter_email,j.location].join(' ').toLowerCase().includes(q)));
+  const pages = Math.max(1, Math.ceil(rows.length/PAGE)); if(filt.page>pages) filt.page=pages;
+  const slice = rows.slice((filt.page-1)*PAGE, filt.page*PAGE);
+  $('#jobs').innerHTML = slice.length ? slice.map(j=>{
+    const pr = (j.priority||'').toLowerCase(); const pc = pr.startsWith('review')?'review':pr||'low';
+    const sc = Math.max(0,Math.min(100,+j.job_match_score||0));
+    return `<tr data-id="${esc(j.id)}">
+      <td><div class="co">${esc(j.company||'—')}</div><div class="sub">${esc(j.job_title||'—')}${j.location?' · '+esc(j.location):''}${j.source==='linkedin'?' · <span class="mono">in</span>':''}</div></td>
+      <td class="hide-m"><div>${esc(j.recruiter_name||'—')}</div><div class="sub">${j.recruiter_email?esc(j.recruiter_email):'<span class="err">no email</span>'}</div></td>
+      <td><div class="score"><span>${sc}</span><div class="bar"><i style="width:${sc}%"></i></div></div></td>
+      <td class="hide-m"><span class="badge b-${esc(pc)}">${esc(j.priority||'—')}</span></td>
+      <td><span class="badge ${j.email_status==='Sent'?'b-sent':'b-not'}">${j.email_status==='Sent'?'Sent'+(j.sent_date?' · '+esc(j.sent_date.slice(5)):''):'Not sent'}</span>${j.send_error&&j.email_status!=='Sent'?'<div class="err" title="'+esc(j.send_error)+'">send failed</div>':''}</td>
+      <td><div class="rowact">${j.email_status==='Sent'?'':'<button class="btn sm" data-send="'+esc(j.id)+'">Send</button>'}</div></td></tr>`;
+  }).join('') : `<tr><td colspan="6"><div class="empty"><b>${JOBS.length?'No jobs match your filters':'No jobs yet'}</b>${JOBS.length?'':'Upload screenshots or run a LinkedIn search to get started.'}</div></td></tr>`;
+  $('#pager').innerHTML = `<span>${rows.length} job(s)</span><span class="row"><button class="btn sm ghost" data-pg="-1" ${filt.page<=1?'disabled':''}>‹ Prev</button>${filt.page}/${pages}<button class="btn sm ghost" data-pg="1" ${filt.page>=pages?'disabled':''}>Next ›</button></span>`;
+}
+$('#f-status').onclick = e => { const b=e.target.closest('button'); if(!b) return; filt.s=b.dataset.s; filt.page=1; $$('#f-status button').forEach(x=>x.classList.toggle('on',x===b)); renderJobs(); };
+$('#f-prio').onchange = e => { filt.p=e.target.value; filt.page=1; renderJobs(); };
+$('#f-q').oninput = e => { filt.q=e.target.value; filt.page=1; renderJobs(); };
+$('#pager').onclick = e => { const b=e.target.closest('[data-pg]'); if(b){ filt.page+=+b.dataset.pg; renderJobs(); } };
+$('#jobs').onclick = async e => {
+  const sb = e.target.closest('[data-send]');
+  if (sb) { e.stopPropagation(); return sendOne(sb.dataset.send, sb); }
+  const tr = e.target.closest('tr[data-id]'); if(tr) openJob(tr.dataset.id);
+};
+async function sendOne(id, btn){
+  return busy(btn, async()=>{
+    try { const j = await api(`/api/jobs/${id}/send`, {method:'POST'}); JOBS = JOBS.map(x=>x.id===id?j:x); renderJobs(); toast('Sent to '+j.recruiter_email,'good'); return true; }
+    catch(e){ if(e.detail?.needs_gmail){ toast('Connect Gmail first','bad'); show('settings'); } else toast(e.message,'bad'); loadJobs(); return false; }
+  });
+}
+
+/* job modal */
+function openJob(id){ const j=JOBS.find(x=>x.id===id); if(!j) return; curJob=j;
+  $('#jm-title').textContent = (j.company||'Job')+' — '+(j.job_title||'');
+  $('#j-company').value=j.company||''; $('#j-title').value=j.job_title||''; $('#j-rname').value=j.recruiter_name||''; $('#j-remail').value=j.recruiter_email||'';
+  $('#j-subject').value=j.email_subject||''; $('#j-body').value=j.email_body||'';
+  $('#j-meta').textContent = `Score ${j.job_match_score||0} · ${j.source||''}${j.linkedin_url?' · '+j.linkedin_url:''}${j.sent_date?' · sent '+j.sent_date:''}`;
+  $('#j-mark').textContent = j.email_status==='Sent' ? 'Mark as not sent' : 'Mark as sent';
+  $('#j-send').textContent = j.email_status==='Sent' ? 'Send again' : 'Save & send';
+  $('#jm').hidden=false; }
+const closeJob = () => { $('#jm').hidden=true; curJob=null; };
+$('#jm-x').onclick = closeJob; $('#jm').onclick = e => { if(e.target.id==='jm') closeJob(); };
+const jobBody = () => ({company:$('#j-company').value, job_title:$('#j-title').value, recruiter_name:$('#j-rname').value, recruiter_email:$('#j-remail').value.trim(), email_subject:$('#j-subject').value, email_body:$('#j-body').value});
+async function saveJob(extra={}){ const j = await api('/api/jobs/'+curJob.id,{method:'PATCH',body:{...jobBody(),...extra}}); JOBS=JOBS.map(x=>x.id===j.id?j:x); curJob=j; renderJobs(); return j; }
+$('#j-save').onclick = e => busy(e.currentTarget, async()=>{ try{ await saveJob(); toast('Saved','good'); closeJob(); }catch(x){ toast(x.message,'bad'); } });
+$('#j-mark').onclick = e => busy(e.currentTarget, async()=>{ try{ await saveJob({email_status: curJob.email_status==='Sent'?'Not Sent':'Sent'}); closeJob(); }catch(x){ toast(x.message,'bad'); } });
+$('#j-send').onclick = e => busy(e.currentTarget, async()=>{ try{ await saveJob(); const id=curJob.id; closeJob(); await sendOne(id, document.createElement('button')); }catch(x){ toast(x.message,'bad'); } });
+$('#j-del').onclick = async () => { if(!confirm('Delete this job?')) return; await api('/api/jobs/'+curJob.id,{method:'DELETE'}); JOBS=JOBS.filter(x=>x.id!==curJob.id); closeJob(); renderJobs(); };
+
+/* ---------- runs ---------- */
+async function startRun(mode, btn){
+  try{ await api('/api/run',{method:'POST',body:{mode}}); lastSeq=0; $('#console').innerHTML=''; toast('Started — watch the Console tab'); setRunning(true); startPoll(true); }
+  catch(e){ toast(e.message,'bad'); }
+}
+$('#a-search').onclick = e => startRun('search', e.currentTarget);
+$('#a-process').onclick = e => startRun('process', e.currentTarget);
+$('#a-both').onclick = e => { if(confirm('Search LinkedIn, read screenshots AND send every unsent mail?')) startRun('both'); };
+$('#shot-run').onclick = e => startRun('process');
+$('#a-send').onclick = e => {
+  const n = +e.currentTarget.dataset.n;
+  if (!ME.gmail.connected) { toast('Connect Gmail first','bad'); return show('settings'); }
+  if (!n) return toast('Nothing to send — no unsent jobs with an email address.');
+  if (confirm(`Send ${n} email(s) from ${ME.gmail.email||'your Gmail'}${ME.resume?' with your resume attached':' (no resume uploaded!)'}?\n\nUp to ${ME.settings.max_send_per_run} are sent per run.`)) startRun('send_only');
+};
+
+function setRunning(r){ RUNNING=r; $('#runpill .dot').classList.toggle('run', r); $('#runpill span:last-child').textContent = r?'RUNNING':'IDLE'; $$('#a-send,#a-search,#a-process,#a-both,#shot-run').forEach(b=>b.disabled=r); }
+function addLines(lines){ const c=$('#console'); const stick = c.scrollTop+c.clientHeight >= c.scrollHeight-40;
+  for(const l of lines){ const d=document.createElement('div'); d.className='l '+l.kind; d.innerHTML=`<span class="t">${esc(l.t)}</span>${esc(l.msg)}`; c.append(d); }
+  if(stick) c.scrollTop=c.scrollHeight; }
+async function poll(){
+  try{
+    const s = await api('/api/run/status?after='+lastSeq);
+    if(s.lines.length){ addLines(s.lines); lastSeq=s.seq; }
+    const was = RUNNING; setRunning(s.running);
+    if(was && !s.running){ await Promise.all([loadJobs(), loadShots()]); loadRuns(); toast('Run finished','good'); }
+    pollT = setTimeout(poll, s.running ? 1500 : 15000);
+  }catch(e){ pollT = setTimeout(poll, 20000); }
+}
+function startPoll(now){ clearTimeout(pollT); pollT = setTimeout(poll, now?200:0); }
+function stopPoll(){ clearTimeout(pollT); }
+$('#c-clear').onclick = () => $('#console').innerHTML='';
+async function loadRuns(){ try{ const r = await api('/api/runs');
+  $('#runs').innerHTML = r.length ? r.map(x=>`<div class="runrow"><span><b>${esc(x.trigger)}</b> · ${esc((x.steps||[]).join(' → '))}</span><span class="${x.status==='done'?'ok':'bad'}">${esc(x.status)}</span><span class="sub" style="width:100%">${new Date(x.started_at).toLocaleString()} — ${esc(x.summary||'')}</span></div>`).join('') : '<div class="empty">No runs yet.</div>'; }catch(e){} }
+
+/* ---------- screenshots ---------- */
+async function loadShots(){ try{ const d = await api('/api/screenshots'); SHOTS=d.files; $('#maxmb').textContent=10;
+  $('#shot-count').textContent = `${SHOTS.length} waiting (limit ${d.limit})`;
+  $('#thumbs').innerHTML = SHOTS.map(s=>`<div class="thumb">${s.url?`<img src="${esc(s.url)}" loading="lazy" alt="">`:'<div style="height:120px"></div>'}<span title="${esc(s.label)}">${esc(s.label)}</span><button data-del="${esc(s.name)}" aria-label="Delete">×</button></div>`).join('');
+  $('#a-process span').textContent = SHOTS.length ? `Read screenshots (${SHOTS.length})` : 'Read screenshots'; }catch(e){} }
+$('#thumbs').onclick = async e => { const b=e.target.closest('[data-del]'); if(!b) return; await api('/api/screenshots/'+encodeURIComponent(b.dataset.del),{method:'DELETE'}); loadShots(); };
+const drop = $('#drop'); drop.onclick = () => $('#file').click();
+['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop', e => upload([...e.dataTransfer.files]));
+$('#file').onchange = e => { upload([...e.target.files]); e.target.value=''; };
+async function upload(files){ files = files.filter(f=>f.type.startsWith('image/')); if(!files.length) return toast('Only image files','bad');
+  toast(`Uploading ${files.length} image(s)…`); let ok=0, skipped=[];
+  for(let i=0;i<files.length;i+=4){ const fd=new FormData(); files.slice(i,i+4).forEach(f=>fd.append('files',f));
+    try{ const r=await api('/api/screenshots',{method:'POST',body:fd}); ok+=r.uploaded.length; skipped.push(...r.skipped);}catch(e){ toast(e.message,'bad'); } }
+  if(ok) toast(`${ok} uploaded`,'good'); if(skipped.length) toast('Skipped: '+skipped.join('; '),'bad'); loadShots(); }
+
+/* ---------- schedule ---------- */
+const MODES = [['search','Find jobs'],['send','Read screenshots + send'],['both','Everything']];
+async function loadSched(){ try{ const d = await api('/api/schedules'); $('#s-tz').textContent=d.timezone;
+  $('#s-rows').innerHTML = d.schedules.length ? d.schedules.map(s=>`<div class="srow" data-id="${esc(s.id)}">
+    <input type="text" class="s-l" value="${esc(s.label)}"><input type="time" class="s-t" value="${esc(s.run_at)}">
+    <select class="s-m">${MODES.map(([v,l])=>`<option value="${v}" ${s.mode===v?'selected':''}>${l}</option>`).join('')}</select>
+    <label class="check"><input type="checkbox" class="s-o" ${s.enabled?'checked':''}> on</label>
+    <span class="row"><button class="btn sm" data-ss>Save</button><button class="btn sm danger" data-sd>Delete</button></span>
+    <div class="last">last run: ${s.last_run_at?new Date(s.last_run_at).toLocaleString():'never'}</div></div>`).join('') : '<div class="empty"><b>No schedules</b>Add a time to run automatically every day.</div>'; }catch(e){} }
+$('#s-add').onclick = async () => { try{ await api('/api/schedules',{method:'POST',body:{label:'Daily run',run_at:'10:00',mode:'both',enabled:true}}); loadSched(); }catch(e){ toast(e.message,'bad'); } };
+$('#s-rows').onclick = async e => { const r=e.target.closest('.srow'); if(!r) return; const id=r.dataset.id;
+  if(e.target.closest('[data-ss]')){ try{ await api('/api/schedules/'+id,{method:'PATCH',body:{label:r.querySelector('.s-l').value||'Run',run_at:r.querySelector('.s-t').value,mode:r.querySelector('.s-m').value,enabled:r.querySelector('.s-o').checked}}); toast('Saved','good'); loadSched(); }catch(x){ toast(x.message,'bad'); } }
+  if(e.target.closest('[data-sd]') && confirm('Delete this schedule?')){ await api('/api/schedules/'+id,{method:'DELETE'}); loadSched(); } };
+
+/* ---------- settings ---------- */
+function fillSettings(){
+  const m=ME, c=m.candidate, s=m.settings;
+  $('#c-name').value=c.name||''; $('#c-email').value=c.email||''; $('#c-phone').value=c.phone||''; $('#c-linkedin').value=c.linkedin||''; $('#c-github').value=c.github||'';
+  $('#profile').value=m.profile_text||''; $('#kw').value=(m.keywords||[]).join('\n');
+  $('#p-min').value=s.min_score; $('#p-age').value=s.max_age_days; $('#p-cap').value=s.max_send_per_run; $('#p-tz').value=s.timezone; $('#p-vm').value=s.vision_model; $('#p-cm').value=s.chat_model; $('#p-req').checked=!!s.require_contact;
+  $('#groq-saved').innerHTML = m.keys.groq.length ? m.keys.groq.map(k=>`<span class="chip">${esc(k)}</span>`).join('') : '<span class="sub">No Groq key saved yet.</span>';
+  $('#hv-state').innerHTML = m.keys.harvest ? `<span class="ok">● Saved</span> <span class="chip">${esc(m.keys.harvest)}</span>` : '<span class="sub">○ Not set</span>';
+  const g=m.gmail;
+  $('#gm-state').innerHTML = g.connected ? `<span class="ok">● Connected</span> — sending as <b>${esc(g.email||'your account')}</b>` : '<span class="bad">○ Not connected</span>';
+  $('#gm-connect').textContent = g.connected ? 'Switch Gmail account' : 'Connect Gmail'; $('#gm-connect').disabled = !g.client_available;
+  $('#gm-off').hidden = !g.connected; $('#gm-uri').textContent = g.redirect_uri;
+  if(!g.client_available){ $('#gm-adv').open = true; $('#gm-state').innerHTML += '<div class="hint">This server has no shared Google client — add your own under Advanced first.</div>'; }
+  const r=m.resume;
+  $('#rs-state').innerHTML = r ? `<span class="ok">● ${esc(r.name)}</span> <span class="sub">${Math.round(r.size/1024)} KB · will be attached as this name</span>` : '<span class="sub">○ No resume uploaded</span>';
+  $('#rs-del').hidden = !r;
+}
+const setME = s => { ME = s; fillSettings(); renderSetup(); };
+$('#groq-save').onclick = e => busy(e.currentTarget, async()=>{ try{ const keys=$('#groq-in').value.split(/\s+/).filter(Boolean); if(!keys.length) return toast('Paste at least one key','bad'); setME(await api('/api/secrets',{method:'PUT',body:{groq_keys:keys}})); $('#groq-in').value=''; toast('Groq keys saved','good'); }catch(x){ toast(x.message,'bad'); } });
+$('#groq-clear').onclick = async () => { if(!confirm('Remove all saved Groq keys?')) return; setME(await api('/api/secrets',{method:'PUT',body:{groq_keys:[]}})); };
+$('#groq-test').onclick = e => busy(e.currentTarget, async()=>{ try{ const r=await api('/api/secrets/test-groq',{method:'POST'}); $('#groq-res').innerHTML = r.results.map(x=>x.ok?`<span class="ok">key ${x.key} ✓</span>`:`<span class="bad">key ${x.key} ✗ ${esc(x.error)}</span>`).join(' · '); }catch(x){ toast(x.message,'bad'); } });
+$('#hv-save').onclick = e => busy(e.currentTarget, async()=>{ try{ const v=$('#hv-in').value.trim(); if(!v) return toast('Paste a key first','bad'); setME(await api('/api/secrets',{method:'PUT',body:{harvest_key:v}})); $('#hv-in').value=''; toast('HarvestAPI key saved','good'); }catch(x){ toast(x.message,'bad'); } });
+$('#hv-clear').onclick = async () => { setME(await api('/api/secrets',{method:'PUT',body:{harvest_key:''}})); };
+$('#gm-connect').onclick = e => busy(e.currentTarget, async()=>{ try{ const r=await api('/api/gmail/auth-url'); location.href=r.url; }catch(x){ toast(x.message,'bad'); } });
+$('#gm-off').onclick = async () => { if(confirm('Disconnect Gmail? Scheduled sends will stop.')) setME(await api('/api/gmail/disconnect',{method:'POST'})); };
+$('#gm-file').onclick = () => $('#gm-file-in').click();
+$('#gm-file-in').onchange = async e => { const f=e.target.files[0]; if(f) $('#gm-json').value = await f.text(); e.target.value=''; };
+$('#gm-json-save').onclick = e => busy(e.currentTarget, async()=>{ try{ setME(await api('/api/secrets',{method:'PUT',body:{gmail_client_json:$('#gm-json').value}})); $('#gm-json').value=''; toast('Client saved — now press Connect Gmail','good'); }catch(x){ toast(x.message,'bad'); } });
+$('#gm-json-clear').onclick = async () => { setME(await api('/api/secrets',{method:'PUT',body:{gmail_client_json:''}})); toast('Using the shared client'); };
+
+$('#rs-pick').onclick = () => $('#rs-in').click();
+$('#rs-in').onchange = async e => { const f=e.target.files[0]; e.target.value=''; if(!f) return; const fd=new FormData(); fd.append('file',f); toast('Uploading resume…');
+  try{ const r=await api('/api/resume',{method:'POST',body:fd}); setME(r.state); toast('Resume saved'+(r.notes.length?' — '+r.notes.join(', '):''),'good'); }catch(x){ toast(x.message,'bad'); } };
+$('#rs-del').onclick = async () => { if(confirm('Remove your resume?')) setME(await api('/api/resume',{method:'DELETE'})); };
+$('#rs-build').onclick = e => busy(e.currentTarget, async()=>{ try{ setME(await api('/api/profile/build',{method:'POST'})); toast('Profile & keywords rebuilt','good'); }catch(x){ toast(x.message,'bad'); } });
+$('#tex-pick').onclick = () => $('#tex-in').click();
+$('#tex-in').onchange = async e => { const f=e.target.files[0]; e.target.value=''; if(!f) return; const fd=new FormData(); fd.append('file',f); toast('Reading LaTeX…');
+  try{ setME(await api('/api/profile/tex',{method:'POST',body:fd})); toast('Profile built from LaTeX','good'); }catch(x){ toast(x.message,'bad'); } };
+
+$('#save-all').onclick = e => busy(e.currentTarget, async()=>{ try{
+  setME(await api('/api/settings',{method:'PUT',body:{
+    candidate:{name:$('#c-name').value,email:$('#c-email').value,phone:$('#c-phone').value,linkedin:$('#c-linkedin').value,github:$('#c-github').value},
+    profile_text:$('#profile').value, keywords:$('#kw').value.split('\n'),
+    min_score:+$('#p-min').value, max_age_days:+$('#p-age').value, max_send_per_run:+$('#p-cap').value, timezone:$('#p-tz').value.trim(),
+    vision_model:$('#p-vm').value.trim(), chat_model:$('#p-cm').value.trim(), require_contact:$('#p-req').checked}}));
+  toast('Settings saved','good'); }catch(x){ toast(x.message,'bad'); } });
+</script>
+</body>
+</html>
