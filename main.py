@@ -31,6 +31,16 @@ def index():
     return FileResponse(STATIC / "index.html")
 
 
+@app.get("/privacy", response_class=HTMLResponse)
+def privacy_policy():
+    return FileResponse(STATIC / "privacy.html", media_type="text/html")
+
+
+@app.get("/terms", response_class=HTMLResponse)
+def terms_of_service():
+    return FileResponse(STATIC / "terms.html", media_type="text/html")
+
+
 @app.get("/config.js")
 def config_js():
     """Public Firebase web config, injected from env so index.html never needs editing."""
