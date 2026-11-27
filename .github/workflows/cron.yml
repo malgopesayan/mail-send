@@ -1,0 +1,36 @@
+name: pipeline-cron
+# Wakes the Render free service and starts every user's due schedules.
+# Set repo secrets:  APP_URL (e.g. https://job-mailer.onrender.com)  and  CRON_SECRET.
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Wake the service
+        run: |
+          for i in $(seq 1 16); do
+            if curl -sf -m 30 "${{ secrets.APP_URL }}/api/healthz"; then echo; echo "awake"; exit 0; fi
+            echo "booting ($i/16)"; sleep 15
+          done
+          echo "service did not wake in 4 minutes"; exit 1
+
+      - name: Tick scheduler
+        run: |
+          curl -sS --fail-with-body -m 120 -X POST \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/tick"
+
+      - name: Keep the service awake until runs finish
+        # Render Free sleeps after 15 min without requests; a long run would be killed mid-way.
+        run: |
+          sleep 20
+          for i in $(seq 1 70); do
+            R=$(curl -sf -m 30 "${{ secrets.APP_URL }}/api/healthz" || echo '{"running":true}')
+            echo "$R" | grep -q '"running":true' || { echo "all runs finished"; exit 0; }
+            sleep 30
+          done

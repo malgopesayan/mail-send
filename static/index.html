@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Mailer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%237C7CFF'/%3E%3Cstop offset='1' stop-color='%232FD9C5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='17' fill='url(%23g)'/%3E%3Cpath d='M13 31L52 14 39 51l-9-14z' fill='%23fff'/%3E%3Cpath d='M30 37L52 14' stroke='%234B46D9' stroke-width='3'/%3E%3C/svg%3E">
+<script>
+(function(){var t;try{t=localStorage.getItem('jm-theme')}catch(e){}
+if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
+document.documentElement.dataset.theme=t})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
+<style>
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:linear-gradient(160deg,var(--bg),var(--bg2));background-attachment:fixed;color:var(--text);font:14px/1.55 Manrope,system-ui,sans-serif;min-height:100vh}
+h1,h2,h3{margin:0;font-family:Sora,Manrope,sans-serif;letter-spacing:-.015em}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--a1)}
+:focus-visible{outline:2px solid var(--a2);outline-offset:2px}
+
+/* ambient light behind the glass */
+.aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.aurora i{position:absolute;width:56vmax;height:56vmax;border-radius:50%;opacity:var(--blob);filter:blur(70px);will-change:transform;animation:drift 24s ease-in-out infinite alternate}
+.aurora i:nth-child(1){background:radial-gradient(closest-side,var(--b1),transparent);top:-24vmax;left:-14vmax}
+.aurora i:nth-child(2){background:radial-gradient(closest-side,var(--b2),transparent);bottom:-26vmax;right:-14vmax;animation-duration:31s;animation-delay:-8s}
+.aurora i:nth-child(3){background:radial-gradient(closest-side,var(--b3),transparent);top:28%;left:52%;width:34vmax;height:34vmax;animation-duration:27s;animation-delay:-14s}
+@keyframes drift{to{transform:translate3d(11vw,8vh,0) scale(1.18)}}
+
+.glass{background:var(--glass);border:1px solid var(--edge);box-shadow:var(--shadow),inset 0 1px 0 var(--shine);
+  -webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%)}
+
+/* animated logo */
+.logo{position:relative;width:44px;height:44px;flex:none;display:inline-block}
+.logo .ring{position:absolute;inset:-3px;border-radius:32%;background:conic-gradient(from 0deg,var(--a1),var(--a2),var(--hot),var(--a1));animation:spin 6s linear infinite;opacity:.85}
+.logo .face{position:absolute;inset:0;border-radius:30%;background:var(--solid);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.logo svg{width:74%;height:74%;overflow:visible}
+.logo .plane{animation:fly 4.2s cubic-bezier(.6,0,.3,1) infinite;transform-origin:center}
+.logo .trail{stroke-dasharray:3 5;animation:dash 1s linear infinite}
+.logo img{width:100%;height:100%;object-fit:contain}
+.logo.big{width:86px;height:86px;animation:float 5s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fly{0%,55%{transform:translate(0,0);opacity:1}70%{transform:translate(34px,-30px) scale(.6);opacity:0}71%{transform:translate(-30px,26px) scale(.6);opacity:0}90%,100%{transform:translate(0,0);opacity:1}}
+@keyframes dash{to{stroke-dashoffset:-16}}
+@keyframes float{50%{transform:translateY(-9px)}}
+
+/* buttons */
+.btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:10px 16px;font-weight:700;font-size:13px;
+  border:1px solid var(--edge2);background:var(--glass2);cursor:pointer;white-space:nowrap;transition:transform .18s,box-shadow .18s,border-color .18s,background .18s}
+.btn:hover:not(:disabled){transform:translateY(-2px);border-color:var(--a1);box-shadow:0 8px 22px rgba(80,90,220,.24)}
+.btn:active:not(:disabled){transform:translateY(0) scale(.98)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:linear-gradient(120deg,var(--a1),var(--a2));border-color:transparent;color:var(--on-accent)}
+.btn.primary::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.45) 50%,transparent 65%);transform:translateX(-120%)}
+.btn.primary:hover:not(:disabled)::after{transform:translateX(120%);transition:transform .7s}
+.btn.danger{color:var(--red)}
+.btn.stop{background:var(--hot);border-color:transparent;color:var(--on-accent);animation:glow 1.5s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 0 0 7px rgba(255,122,102,.18)}}
+.btn.sm{padding:6px 11px;font-size:12px;border-radius:9px}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.lg{padding:14px 22px;font-size:14px;border-radius:14px}
+.btn svg{width:16px;height:16px;flex:none}
+.icon-btn{width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--edge2);background:var(--glass2);cursor:pointer;transition:.2s}
+.icon-btn:hover{border-color:var(--a1);transform:rotate(-8deg)}
+.icon-btn svg{width:18px;height:18px}
+[data-theme=dark] .i-sun,[data-theme=light] .i-moon{display:block}
+[data-theme=dark] .i-moon,[data-theme=light] .i-sun{display:none}
+
+/* inputs */
+label.f{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600}
+input[type=text],input[type=password],input[type=number],input[type=time],input[type=email],input[type=search],select,textarea{
+  width:100%;background:var(--field);border:1px solid var(--edge2);border-radius:11px;padding:10px 12px;outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--a1);box-shadow:0 0 0 3px rgba(124,124,255,.2)}
+select option{background:var(--solid)}
+textarea{resize:vertical;min-height:90px;line-height:1.55}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+.hint{font-size:12px;color:var(--muted);margin-top:5px}
+.check{display:flex;align-items:center;gap:9px;cursor:pointer}
+.check input{width:17px;height:17px;accent-color:var(--a1)}
+
+/* login */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative}
+.login-card{width:100%;max-width:460px;border-radius:26px;padding:40px 34px;text-align:center;animation:rise .7s cubic-bezier(.2,.8,.2,1) both}
+.login-card h1{font-size:34px;margin-top:20px;background:linear-gradient(100deg,var(--text) 20%,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.login-card p.sub{color:var(--muted);margin:8px 0 26px}
+.gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;color:#1f1f1f;border:1px solid #d7dbea;border-radius:13px;padding:13px;font-weight:700;font-size:15px;cursor:pointer;transition:.2s}
+.gbtn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.2)}
+.gbtn svg{width:20px;height:20px}
+.feat{display:grid;gap:10px;text-align:left;margin-top:26px;color:var(--muted);font-size:13px}
+.feat div{display:flex;gap:11px;align-items:flex-start;animation:rise .6s both}
+.feat div:nth-child(1){animation-delay:.15s}.feat div:nth-child(2){animation-delay:.25s}.feat div:nth-child(3){animation-delay:.35s}
+.feat b{color:var(--a2);font-family:'JetBrains Mono',monospace}
+#login-err{color:var(--red);font-size:13px;margin-top:14px;min-height:18px}
+.login-theme{position:absolute;top:18px;right:18px}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}}
+
+/* shell: floating sidebar on desktop, bottom dock on phones */
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);gap:22px;max-width:1380px;margin:0 auto;padding:18px}
+aside.side{position:sticky;top:18px;height:calc(100vh - 36px);border-radius:22px;padding:18px 14px;display:flex;flex-direction:column;gap:18px;z-index:30}
+.brand{display:flex;align-items:center;gap:12px;font:700 17px Sora,sans-serif;padding:0 4px}
+nav.tabs{display:grid;gap:4px}
+nav.tabs button{display:flex;align-items:center;gap:11px;background:none;border:1px solid transparent;color:var(--muted);padding:11px 12px;border-radius:13px;cursor:pointer;font-weight:600;text-align:left;transition:.2s}
+nav.tabs button svg{width:18px;height:18px;flex:none}
+nav.tabs button:hover{color:var(--text);background:var(--glass2);transform:translateX(3px)}
+nav.tabs button.on{color:var(--text);background:linear-gradient(110deg,rgba(124,124,255,.30),rgba(47,217,197,.18));border-color:var(--edge2)}
+.side-foot{margin-top:auto;display:grid;gap:10px}
+.side-foot .row{justify-content:space-between;flex-wrap:nowrap}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 11.5px 'JetBrains Mono',monospace;padding:8px 12px;border-radius:999px;border:1px solid var(--edge2);background:var(--glass2);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.run{background:var(--a2);animation:ping 1.2s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(47,217,197,.7)}100%{box-shadow:0 0 0 9px rgba(47,217,197,0)}}
+.avatar{width:40px;height:40px;border-radius:50%;border:2px solid var(--edge2);cursor:pointer;object-fit:cover;background:var(--glass2)}
+.menu{position:absolute;left:14px;right:14px;bottom:76px;background:var(--solid);border:1px solid var(--edge2);border-radius:14px;padding:9px;box-shadow:var(--shadow);animation:rise .2s}
+.menu .who{padding:6px 8px 10px;border-bottom:1px solid var(--edge);margin-bottom:6px;font-size:12px;color:var(--muted);word-break:break-all}
+.menu .who b{display:block;color:var(--text);font-size:13px}
+#progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:100;background:linear-gradient(90deg,transparent,var(--a1),var(--a2),var(--hot),transparent);background-size:50% 100%;background-repeat:no-repeat;animation:slide 1.3s linear infinite}
+@keyframes slide{from{background-position:-100% 0}to{background-position:200% 0}}
+main{min-width:0;padding:6px 0 110px}
+@media(max-width:900px){
+  .shell{display:block;padding:12px}
+  aside.side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:12px;margin-bottom:14px;gap:10px;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .side-foot{margin:0 0 0 auto;display:flex;align-items:center}
+  .menu{left:auto;right:10px;bottom:auto;top:66px;width:240px;z-index:50}
+  nav.tabs{position:fixed;left:8px;right:8px;bottom:8px;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--solid);border:1px solid var(--edge2);border-radius:20px;padding:6px;z-index:40;box-shadow:var(--shadow)}
+  nav.tabs button{flex-direction:column;gap:3px;font-size:10.5px;padding:7px 2px;align-items:center;min-width:0}
+  nav.tabs button:hover{transform:none}
+  .brand span.name{display:none}
+}
+
+.view{display:none}.view.on{display:block}
+.view.on>*{animation:rise .5s cubic-bezier(.2,.8,.2,1) both}
+.view.on>*:nth-child(2){animation-delay:.05s}.view.on>*:nth-child(3){animation-delay:.1s}.view.on>*:nth-child(4){animation-delay:.15s}.view.on>*:nth-child(n+5){animation-delay:.2s}
+
+.panel{background:var(--glass);border:1px solid var(--edge);box-shadow:var(--shadow),inset 0 1px 0 var(--shine);-webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);border-radius:20px;margin-bottom:18px;overflow:hidden}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:15px 20px;border-bottom:1px solid var(--edge)}
+.ph h2{font-size:14px;font-weight:600}
+.pb{padding:20px}
+.page-title{font:700 28px Sora,sans-serif;letter-spacing:-.025em;margin:6px 0 4px}
+.page-sub{color:var(--muted);margin-bottom:20px}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px}
+.stat{position:relative;overflow:hidden;border-radius:18px;padding:15px 18px;transition:transform .2s}
+.stat:hover{transform:translateY(-4px)}
+.stat::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:var(--tone,var(--a1))}
+.stat .l{font-size:12px;color:var(--muted);font-weight:600}
+.stat .v{font:700 30px Sora,sans-serif;margin-top:4px;font-variant-numeric:tabular-nums}
+
+/* search control */
+.hero{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:20px 22px}
+.radar{width:64px;height:64px;border-radius:50%;flex:none;position:relative;border:1px solid var(--edge2);background:radial-gradient(circle,transparent 30%,var(--edge) 31%,transparent 33%,transparent 60%,var(--edge) 61%,transparent 63%)}
+.radar::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 70%,var(--a2));opacity:.25}
+.radar::after{content:"";position:absolute;width:8px;height:8px;border-radius:50%;background:var(--a2);left:28px;top:28px}
+.hero.live .radar::before{opacity:.85;animation:spin 1.6s linear infinite}
+.hero .txt{flex:1;min-width:200px}
+.hero h2{font-size:18px}
+.queue{display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%;padding:11px 14px;border-radius:13px;border:1px solid var(--warn);background:var(--glass2)}
+.queue span{flex:1;min-width:180px}
+
+.setup .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.step{display:flex;gap:11px;align-items:center;padding:11px 13px;border:1px solid var(--edge);border-radius:13px;background:var(--glass2);cursor:pointer;font-size:13px;transition:.2s}
+.step:hover{border-color:var(--a1);transform:translateY(-2px)}
+.step i{width:22px;height:22px;border-radius:50%;border:2px solid var(--muted);flex:none;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:11px}
+.step.ok{opacity:.6} .step.ok i{background:var(--green);border-color:var(--green);color:var(--on-accent)}
+.step small{display:block;color:var(--muted);font-size:11.5px}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--edge2);border-radius:11px;overflow:hidden;background:var(--field)}
+.seg button{background:none;border:none;padding:8px 13px;color:var(--muted);cursor:pointer;font-size:12.5px;font-weight:600;transition:.2s}
+.seg button.on{background:linear-gradient(120deg,var(--a1),var(--a2));color:var(--on-accent)}
+.toolbar select{width:auto}
+
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;font-weight:600;color:var(--muted);padding:11px 18px;border-bottom:1px solid var(--edge);white-space:nowrap}
+td{padding:13px 18px;border-bottom:1px solid var(--edge);vertical-align:middle}
+tbody tr{cursor:pointer;transition:background .15s} tbody tr:hover{background:var(--glass2)}
+tbody tr:last-child td{border-bottom:none}
+.co{font-weight:700} .sub{color:var(--muted);font-size:12.5px}
+.badge{display:inline-block;font:600 11px 'JetBrains Mono',monospace;padding:3px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.b-high{color:var(--a2)}.b-medium{color:var(--warn)}.b-low{color:var(--muted)}.b-review{color:var(--red)}.b-sent{color:var(--green)}.b-not{color:var(--muted)}.b-held{color:var(--warn)}
+.score{display:flex;align-items:center;gap:8px;font:600 12px 'JetBrains Mono',monospace;min-width:96px}
+.bar{flex:1;height:6px;border-radius:9px;background:var(--edge);overflow:hidden}.bar i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--a1),var(--a2));animation:grow .8s ease both;transform-origin:left}
+@keyframes grow{from{transform:scaleX(0)}}
+.empty{padding:46px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.pager{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--edge);color:var(--muted);font-size:12px}
+.rowact{display:flex;gap:6px;justify-content:flex-end}
+.err{color:var(--red);font-size:12px}
+@media(max-width:760px){.hide-m{display:none}td,th{padding-left:11px;padding-right:11px}}
+
+.drop{border:2px dashed var(--edge2);border-radius:18px;padding:44px 20px;text-align:center;color:var(--muted);cursor:pointer;transition:.2s}
+.drop:hover,.drop.over{border-color:var(--a2);background:var(--glass2);color:var(--text);transform:scale(1.01)}
+.drop b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:18px}
+.thumb{position:relative;border:1px solid var(--edge);border-radius:14px;overflow:hidden;background:var(--field);animation:rise .4s both}
+.thumb img{display:block;width:100%;height:120px;object-fit:cover;object-position:top}
+.thumb span{display:block;padding:7px 10px;font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thumb button{position:absolute;top:6px;right:6px;width:25px;height:25px;border-radius:50%;border:none;background:rgba(0,0,0,.7);color:#fff;cursor:pointer;line-height:1}
+.thumb button:hover{background:var(--red)}
+
+#console{height:420px;overflow-y:auto;padding:14px 20px;background:#050917;color:#DCE3FF;font:12.5px/1.7 'JetBrains Mono',monospace}
+#console .l{white-space:pre-wrap;word-break:break-word;animation:fade .3s}
+#console .t{color:#65719B;margin-right:9px}
+#console .success{color:#3DDC97}#console .fail{color:#FF6B81}#console .warn{color:#FFC25C}#console .muted{color:#98A3C7}#console .head{color:#2FD9C5;font-weight:600;margin-top:6px}
+@keyframes fade{from{opacity:0}}
+.runrow{padding:12px 20px;border-bottom:1px solid var(--edge);display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;font-size:13px}
+.runrow:last-child{border:none}
+.srow{display:grid;grid-template-columns:1.3fr auto 1.4fr auto auto;gap:10px;align-items:center;padding:13px 20px;border-bottom:1px solid var(--edge)}
+.srow:last-child{border:none}
+.srow .last{grid-column:1/-1;font-size:11.5px;color:var(--muted)}
+@media(max-width:760px){.srow{grid-template-columns:1fr 1fr}}
+
+.keychips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{font:12px 'JetBrains Mono',monospace;padding:4px 10px;border-radius:999px;background:var(--glass2);border:1px solid var(--edge2)}
+.stat-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ok{color:var(--green)} .bad{color:var(--red)}
+details{border:1px solid var(--edge);border-radius:13px;padding:12px 14px;margin-top:14px}
+summary{cursor:pointer;font-weight:700;color:var(--muted)}
+code.uri{display:block;background:var(--field);border:1px solid var(--edge2);padding:8px 10px;border-radius:9px;font:12px 'JetBrains Mono',monospace;word-break:break-all;margin:8px 0}
+.sep{height:1px;background:var(--edge);margin:18px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+.back{position:fixed;inset:0;background:rgba(4,8,20,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:60;display:flex;align-items:flex-start;justify-content:center;padding:4vh 14px;overflow:auto;animation:fade .2s}
+.modal{width:100%;max-width:700px;background:var(--solid);border:1px solid var(--edge2);border-radius:22px;box-shadow:var(--shadow);animation:pop .3s cubic-bezier(.2,1.2,.4,1)}
+@keyframes pop{from{opacity:0;transform:scale(.94) translateY(12px)}}
+.modal .mh{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--edge)}
+.modal .mb{padding:20px;display:grid;gap:14px}
+.modal .mf{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;padding:14px 20px;border-top:1px solid var(--edge)}
+.x{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1}
+.holdbox{border:1px solid var(--warn);border-radius:12px;padding:11px 14px;color:var(--warn);font-size:13px}
+#toasts{position:fixed;top:16px;right:16px;display:grid;gap:8px;z-index:95;width:min(92vw,380px)}
+.toast{background:var(--solid);border:1px solid var(--edge2);border-left:4px solid var(--a1);padding:12px 15px;border-radius:12px;box-shadow:var(--shadow);animation:toastin .3s cubic-bezier(.2,1.2,.4,1)}
+.toast.good{border-left-color:var(--green)}.toast.bad{border-left-color:var(--red)}
+@keyframes toastin{from{opacity:0;transform:translateX(40px)}}
+.spin{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+
+/* assistant */
+#fab{position:fixed;right:22px;bottom:22px;z-index:45;width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,var(--a1),var(--a2));color:var(--on-accent);box-shadow:0 14px 34px rgba(80,90,220,.45);display:flex;align-items:center;justify-content:center;transition:transform .25s}
+#fab:hover{transform:scale(1.08) rotate(-6deg)}
+#fab::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--a2);opacity:0;animation:halo 3s ease-out infinite}
+@keyframes halo{0%{transform:scale(.85);opacity:.8}60%,100%{transform:scale(1.35);opacity:0}}
+#fab svg{width:27px;height:27px}
+#chat{position:fixed;right:16px;bottom:16px;top:16px;width:min(430px,calc(100vw - 32px));z-index:55;border-radius:24px;display:flex;flex-direction:column;background:var(--solid);border:1px solid var(--edge2);box-shadow:var(--shadow);animation:chatin .35s cubic-bezier(.2,.9,.3,1)}
+@keyframes chatin{from{opacity:0;transform:translateX(60px)}}
+.ch{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--edge)}
+.ch .t{flex:1;line-height:1.25}.ch .t b{font-family:Sora,sans-serif}.ch .t div{font-size:11.5px;color:var(--muted)}
+#msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;padding:10px 13px;border-radius:16px;white-space:pre-wrap;word-break:break-word;animation:rise .3s both;font-size:13.5px}
+.msg.user{align-self:flex-end;background:linear-gradient(120deg,var(--a1),var(--a2));color:var(--on-accent);border-bottom-right-radius:5px}
+.msg.assistant{align-self:flex-start;background:var(--glass2);border:1px solid var(--edge);border-bottom-left-radius:5px}
+.msg.note{align-self:center;font-size:12px;color:var(--muted);text-align:center}
+.card{border:1px solid var(--edge2);border-radius:16px;padding:13px;background:var(--glass2);animation:pop .3s;flex:none}
+.card.high{border-color:var(--hot)}
+.card h4{margin:0 0 8px;font:600 13px Sora,sans-serif;word-break:break-word}
+.card dl{margin:0 0 10px;max-height:210px;overflow:auto;font-size:12.5px}
+.card dt{color:var(--muted);font-size:11px;font-weight:700;margin-top:6px}
+.card dd{margin:0;white-space:pre-wrap;word-break:break-word}
+.card .code{font:600 22px 'JetBrains Mono',monospace;letter-spacing:.3em;color:var(--hot)}
+.card input{display:block;width:110px!important;text-align:center;margin:6px 0 12px}
+.card .risk{font-size:11.5px;color:var(--hot);font-weight:700;margin-bottom:6px}
+.suggest{display:flex;flex-wrap:wrap;gap:7px}
+.suggest button{border:1px solid var(--edge2);background:var(--glass2);border-radius:999px;padding:6px 12px;font-size:12px;cursor:pointer}
+.suggest button:hover{border-color:var(--a1)}
+.typing{display:flex;gap:5px;align-self:flex-start;padding:12px 14px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--a2);animation:bounce 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bounce{40%{transform:translateY(-7px)}}
+.composer{display:flex;gap:8px;padding:12px;border-top:1px solid var(--edge)}
+.composer textarea{min-height:44px;max-height:120px;resize:none}
+@media(max-width:900px){#fab{bottom:86px;right:14px}#chat{inset:8px;width:auto}#toasts{left:12px;right:12px;width:auto}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+<div id="progress" hidden></div>
+
+<template id="logo-t">
+  <span class="ring"></span><span class="face">
+  <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <path class="trail" d="M3 40c7-1 11-4 15-10" stroke="var(--a2)" stroke-width="2.4" stroke-linecap="round"/>
+    <g class="plane"><path d="M8 22L42 7 31 40l-8-11z" fill="var(--a1)"/><path d="M23 29L42 7 20 25.500z" fill="var(--a2)"/></g>
+  </svg></span>
+</template>
+
+<!-- ============ LOGIN ============ -->
+<section id="login" hidden>
+  <button class="icon-btn login-theme" data-theme-toggle aria-label="Switch light / dark mode"></button>
+  <div class="login-card glass">
+    <span class="logo big" data-logo></span>
+    <h1>Job Mailer</h1>
+    <p class="sub">Find recruiter posts, draft tailored emails, and send them from your own Gmail.</p>
+    <button class="gbtn" id="btn-google">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.7-.4-3.9z"/></svg>
+      Continue with Google
+    </button>
+    <div id="login-err"></div>
+    <div class="feat">
+      <div><b>01</b>Bring your own Groq / NVIDIA, HarvestAPI and Gmail — keys stay encrypted on the server.</div>
+      <div><b>02</b><span>Mail goes out from the Gmail account <i>you</i> connect, never from ours.</span></div>
+      <div><b>03</b>Schedule searches and sends — even while you're offline.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ APP ============ -->
+<div id="app" hidden>
+<div class="shell">
+<aside class="side glass">
+  <div class="brand"><span class="logo" data-logo></span><span class="name">Job Mailer</span></div>
+  <nav class="tabs" id="tabs">
+    <button data-v="dash" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Dashboard</button>
+    <button data-v="shots"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Screenshots</button>
+    <button data-v="console"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6-5-6-5M12 19h8"/></svg>Console</button>
+    <button data-v="sched"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Schedule</button>
+    <button data-v="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Settings</button>
+  </nav>
+  <div class="side-foot">
+    <span class="pill" id="runpill"><i class="dot"></i><span>IDLE</span></span>
+    <div class="row">
+      <img class="avatar" id="avatar" alt="Account" referrerpolicy="no-referrer">
+      <button class="icon-btn" data-theme-toggle aria-label="Switch light / dark mode"></button>
+    </div>
+  </div>
+  <div class="menu" id="menu" hidden>
+    <div class="who"><b id="m-name"></b><span id="m-email"></span></div>
+    <button class="btn ghost" style="width:100%" id="btn-out">Sign out</button>
+  </div>
+</aside>
+
+<main>
+<!-- DASHBOARD -->
+<section class="view on" id="v-dash">
+  <div class="panel setup" id="setup" hidden>
+    <div class="ph"><h2>Finish setup</h2><span class="sub" id="setup-n"></span></div>
+    <div class="pb"><div class="steps" id="steps"></div></div>
+  </div>
+
+  <div class="panel hero" id="hero">
+    <div class="radar" aria-hidden="true"></div>
+    <div class="txt"><h2 id="hero-title">LinkedIn job search</h2><div class="sub" id="hero-sub">Searches HarvestAPI, keeps only posts that match your search phrases.</div></div>
+    <button class="btn primary lg" id="a-search" data-run="search">Start search</button>
+    <div class="queue" id="queue" hidden>
+      <span id="queue-text"></span>
+      <button class="btn sm primary" id="q-resume" data-run="resume">Continue checking</button>
+      <button class="btn sm danger" id="q-discard">Discard</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="actions">
+    <button class="btn primary" id="a-send" data-run="send_only">Send all unsent</button>
+    <button class="btn" id="a-process" data-run="process">Read screenshots</button>
+    <button class="btn" id="a-both" data-run="both">Run everything</button>
+    <button class="btn stop" id="a-stop-other" hidden>Stop current run</button>
+  </div>
+
+  <div class="panel">
+    <div class="ph">
+      <div class="toolbar">
+        <div class="seg" id="f-status"><button data-s="all" class="on">All</button><button data-s="Not Sent">Not sent</button><button data-s="held">Held</button><button data-s="Sent">Sent</button></div>
+        <select id="f-prio" aria-label="Priority"><option value="">Any priority</option><option>High</option><option>Medium</option><option>Low</option></select>
+      </div>
+      <input type="search" id="f-q" placeholder="Search company, role, recruiter…" style="max-width:280px">
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Company / Role</th><th class="hide-m">Recruiter</th><th>Match</th><th class="hide-m">Priority</th><th>Status</th><th></th></tr></thead>
+      <tbody id="jobs"></tbody>
+    </table></div>
+    <div class="pager" id="pager"></div>
+  </div>
+</section>
+
+<!-- SCREENSHOTS -->
+<section class="view" id="v-shots">
+  <div class="page-title">Screenshots</div>
+  <div class="page-sub">Drop recruiter messages / job posts. They’re stored privately, read by the AI, turned into a job + draft email, then deleted.</div>
+  <div class="panel"><div class="pb">
+    <div class="drop" id="drop"><b>Drop images here or click to choose</b>PNG · JPG · WEBP — up to <span id="maxmb">10</span> MB each<input type="file" id="file" accept="image/*" multiple hidden></div>
+    <div class="row" style="margin-top:16px;justify-content:space-between">
+      <span class="sub" id="shot-count"></span>
+      <button class="btn primary" id="shot-run" data-run="process">Read screenshots now</button>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+  </div></div>
+</section>
+
+<!-- CONSOLE -->
+<section class="view" id="v-console">
+  <div class="panel">
+    <div class="ph"><h2>Live console</h2><span class="row"><button class="btn sm stop" id="c-stop" hidden>Stop</button><button class="btn sm ghost" id="c-clear">Clear</button></span></div>
+    <div id="console"><div class="l muted">Nothing running. Start a run from the dashboard.</div></div>
+  </div>
+  <div class="panel"><div class="ph"><h2>Recent runs</h2></div><div id="runs"><div class="empty">No runs yet.</div></div></div>
+</section>
+
+<!-- SCHEDULE -->
+<section class="view" id="v-sched">
+  <div class="page-title">Schedule</div>
+  <div class="page-sub">Runs happen on the server, so they fire even when this tab is closed. Times use <b id="s-tz"></b> (change in Settings).</div>
+  <div class="panel">
+    <div class="ph"><h2>Daily runs</h2><button class="btn sm primary" id="s-add">+ Add time</button></div>
+    <div id="s-rows"></div>
+  </div>
+  <div class="panel"><div class="pb sub">
+    <b style="color:var(--text)">Find jobs</b> = LinkedIn search only · <b style="color:var(--text)">Read screenshots + send</b> = process uploads, then mail every ready job ·
+    <b style="color:var(--text)">Everything</b> = search → screenshots → send. Held jobs are never sent automatically.
+  </div></div>
+</section>
+
+<!-- SETTINGS -->
+<section class="view" id="v-settings">
+  <div class="page-title">Settings</div>
+  <div class="page-sub">Everything here belongs to your account only.</div>
+
+  <div class="panel" id="p-keys">
+    <div class="ph"><h2>API keys</h2></div>
+    <div class="pb">
+      <label class="f">Groq API keys <span class="mono">(console.groq.com/keys)</span></label>
+      <div class="keychips" id="groq-saved"></div>
+      <textarea id="groq-in" rows="3" placeholder="Paste one key per line. Saving REPLACES the keys above. Extra keys are used as backups when one hits its rate limit." autocomplete="off" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary sm" id="groq-save">Save Groq keys</button>
+        <button class="btn sm" id="groq-test">Test saved keys</button>
+        <button class="btn sm danger" id="groq-clear">Remove all</button>
+        <span id="groq-res" class="sub"></span>
+      </div>
+      <div class="sep"></div>
+      <label class="f">NVIDIA API key <span class="mono">(build.nvidia.com — powers the assistant, and is the backup in Auto mode)</span></label>
+      <div class="stat-line"><span id="nv-state"></span></div>
+      <input type="password" id="nv-in" placeholder="nvapi-… Paste a new key to replace the saved one" autocomplete="off" spellcheck="false">
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary sm" id="nv-save">Save NVIDIA key</button>
+        <button class="btn sm" id="nv-test">Test key</button>
+        <button class="btn sm danger" id="nv-clear">Remove</button>
+        <span id="nv-res" class="sub"></span>
+      </div>
+      <div class="sep"></div>
+      <label class="f">HarvestAPI key <span class="mono">(for LinkedIn post search)</span></label>
+      <div class="stat-line"><span id="hv-state"></span></div>
+      <input type="password" id="hv-in" placeholder="Paste a new key to replace the saved one" autocomplete="off">
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary sm" id="hv-save">Save HarvestAPI key</button>
+        <button class="btn sm danger" id="hv-clear">Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-gmail">
+    <div class="ph"><h2>Gmail — where your mail is sent from</h2></div>
+    <div class="pb">
+      <div class="stat-line"><span id="gm-state"></span></div>
+      <div class="row">
+        <button class="btn primary" id="gm-connect">Connect Gmail</button>
+        <button class="btn danger" id="gm-off" hidden>Disconnect</button>
+      </div>
+      <div class="hint">On Google’s screen you can pick <b>any</b> account — it doesn’t have to be the one you signed in with. Mails are sent from that account, appear in its Sent folder, and replies land in its inbox.</div>
+      <details id="gm-adv"><summary>Advanced — use my own Google OAuth client</summary>
+        <p class="hint">Only needed if this server has no shared Gmail client, or you don’t want to use it. Create a <b>Web application</b> OAuth client in Google Cloud Console, enable the Gmail API, add this redirect URI, then paste the downloaded <span class="mono">credentials.json</span> (or upload it).</p>
+        <code class="uri" id="gm-uri"></code>
+        <textarea id="gm-json" rows="4" placeholder='{"web":{"client_id":"…","client_secret":"…"}}' spellcheck="false"></textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="btn sm" id="gm-file">Upload credentials.json</button><input type="file" id="gm-file-in" accept=".json,application/json" hidden>
+          <button class="btn sm primary" id="gm-json-save">Save client</button>
+          <button class="btn sm danger" id="gm-json-clear">Use shared client</button>
+        </div>
+        <p class="hint">Saving a different client disconnects Gmail — connect again afterwards.</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><h2>Your profile — used to write the emails</h2></div>
+    <div class="pb">
+      <div class="grid3">
+        <div><label class="f">Full name</label><input type="text" id="c-name"></div>
+        <div><label class="f">Contact email (in signature)</label><input type="email" id="c-email"></div>
+        <div><label class="f">Phone</label><input type="text" id="c-phone"></div>
+        <div><label class="f">LinkedIn</label><input type="text" id="c-linkedin" placeholder="linkedin.com/in/you"></div>
+        <div><label class="f">GitHub</label><input type="text" id="c-github" placeholder="github.com/you"></div>
+      </div>
+      <div class="sep"></div>
+      <label class="f">Resume (attached to every mail)</label>
+      <div class="stat-line"><span id="rs-state"></span></div>
+      <div class="row">
+        <button class="btn sm" id="rs-pick">Upload PDF / DOCX</button><input type="file" id="rs-in" accept=".pdf,.doc,.docx" hidden>
+        <button class="btn sm danger" id="rs-del" hidden>Remove</button>
+        <button class="btn sm primary" id="rs-build">Build profile &amp; keywords from resume</button>
+        <button class="btn sm" id="tex-pick">Upload LaTeX (.tex)</button><input type="file" id="tex-in" accept=".tex" hidden>
+      </div>
+      <div style="margin-top:14px"><label class="f">Experience bank — the AI may only use facts from this text</label>
+        <textarea id="profile" rows="9" class="mono" style="font-size:12.5px" spellcheck="false"></textarea></div>
+      <div style="margin-top:14px"><label class="f">LinkedIn search phrases (one per line)</label>
+        <textarea id="kw" rows="6" spellcheck="false" placeholder="AI Engineer Hiring&#10;Hiring Python Developer"></textarea>
+        <div class="hint">“Build” writes up to 6 in-demand job titles from your resume. These also decide which posts count as a match.</div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><h2>Job matching — what gets saved and mailed</h2></div>
+    <div class="pb">
+      <label class="check"><input type="checkbox" id="p-strict"> Strict matching: the job title must match one of my search phrases</label>
+      <label class="check" style="margin-top:8px"><input type="checkbox" id="p-req"> Only save LinkedIn posts that show a real recruiter email and are direct listings</label>
+      <div class="grid2" style="margin-top:14px">
+        <div><label class="f">Minimum match score to save and auto-send (0-100)</label><input type="number" id="p-min" min="0" max="100"></div>
+        <div><label class="f">Blocked words (comma-separated)</label><input type="text" id="p-excl" placeholder="intern, unpaid, 10+ years"></div>
+        <div><label class="f">Max post age (days)</label><input type="number" id="p-age" min="1" max="30"></div>
+        <div><label class="f">Max mails per run</label><input type="number" id="p-cap" min="1" max="200"></div>
+      </div>
+      <div style="margin-top:14px"><label class="f">Preferred job location(s) <span class="mono">(optional)</span></label>
+        <input type="text" id="p-loc" placeholder="e.g. Pune, Bengaluru, Remote" maxlength="200">
+        <div class="hint">Comma-separated, up to 5. Each phrase is searched with each location, so more locations = more HarvestAPI requests.</div>
+        <label class="check" style="margin-top:8px"><input type="checkbox" id="p-locstrict"> Only save posts whose location matches</label>
+        <label class="check" style="margin-top:6px"><input type="checkbox" id="p-locremote"> …but still allow Remote / Hybrid posts</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><h2>AI models</h2></div>
+    <div class="pb">
+      <div style="margin-bottom:16px">
+        <label class="f">AI provider for search and screenshots</label>
+        <select id="p-llm">
+          <option value="auto">Auto — Groq first, switch to NVIDIA when Groq errors</option>
+          <option value="groq">Groq only</option>
+          <option value="nvidia">NVIDIA only</option>
+        </select>
+      </div>
+      <div class="grid2">
+        <div><label class="f">Groq vision model (screenshots)</label><input type="text" id="p-vm"></div>
+        <div><label class="f">Groq text model (posts, profile)</label><input type="text" id="p-cm"></div>
+        <div><label class="f">NVIDIA vision model</label><input type="text" id="p-nvm"></div>
+        <div><label class="f">NVIDIA text model</label><input type="text" id="p-ncm"></div>
+        <div><label class="f">Assistant model (NVIDIA, must support tool calling)</label><input type="text" id="p-am"></div>
+        <div><label class="f">Timezone</label><input type="text" id="p-tz" placeholder="Asia/Kolkata"></div>
+      </div>
+      <label class="check" style="margin-top:14px"><input type="checkbox" id="p-nthink"> Enable Nemotron thinking mode (slower; off is better for extraction)</label>
+      <div class="hint">If a provider retires a model, put the new name here — no redeploy needed.</div>
+    </div>
+  </div>
+  <button class="btn primary lg" id="save-all">Save profile &amp; preferences</button>
+</section>
+</main>
+</div>
+
+<button id="fab" aria-label="Open assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M21 12a8 8 0 01-8 8H4l2-3a8 8 0 1115-5z"/><path d="M9 12h.01M13 12h.01M17 12h.01"/></svg></button>
+<section id="chat" hidden aria-label="Assistant">
+  <div class="ch"><span class="logo" data-logo></span><div class="t"><b>Assistant</b><div>NVIDIA · changes need your approval</div></div>
+    <button class="btn sm ghost" id="chat-new">New chat</button><button class="x" id="chat-x" aria-label="Close">&times;</button></div>
+  <div id="msgs" aria-live="polite"></div>
+  <form class="composer" id="composer"><textarea id="chat-in" rows="1" maxlength="4000" placeholder="Ask about your jobs, or tell me what to do…"></textarea><button class="btn primary" id="chat-send">Send</button></form>
+</section>
+</div>
+
+<!-- job modal -->
+<div class="back" id="jm" hidden><div class="modal">
+  <div class="mh"><h3 id="jm-title">Job</h3><button class="x" id="jm-x" aria-label="Close">&times;</button></div>
+  <div class="mb">
+    <div class="holdbox" id="j-hold" hidden></div>
+    <div class="grid2"><div><label class="f">Company</label><input type="text" id="j-company"></div><div><label class="f">Job title</label><input type="text" id="j-title"></div></div>
+    <div class="grid2"><div><label class="f">Recruiter name</label><input type="text" id="j-rname"></div><div><label class="f">Recruiter email</label><input type="email" id="j-remail"></div></div>
+    <div><label class="f">Subject</label><input type="text" id="j-subject"></div>
+    <div><label class="f">Email body</label><textarea id="j-body" rows="12"></textarea></div>
+    <div class="sub" id="j-meta" style="word-break:break-all"></div>
+  </div>
+  <div class="mf">
+    <button class="btn danger" id="j-del" style="margin-right:auto">Delete</button>
+    <button class="btn" id="j-release" hidden>I checked it — allow sending</button>
+    <button class="btn" id="j-mark">Mark as sent</button>
+    <button class="btn" id="j-save">Save</button>
+    <button class="btn primary" id="j-send">Save &amp; send</button>
+  </div>
+</div></div>
+
+<div id="toasts"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="/config.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
